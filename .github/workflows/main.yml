@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch CommonLibSSE-NG (multi-runtime fork)
+        shell: bash
+        run: |
+          mkdir -p lib
+          git clone --depth 1 -b ng https://github.com/alandtse/CommonLibVR.git lib/commonlibsse-ng
+
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Configure
+        run: xmake f -y -m releasedbg
+
+      - name: Build
+        run: xmake -y -v
+
+      - name: Collect output
+        shell: bash
+        run: |
+          mkdir -p dist/SKSE/Plugins
+          find build -name "KCD2PlayerSubtitles.dll" -exec cp {} dist/SKSE/Plugins/ \;
+          ls -R dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KCD2PlayerSubtitles
+          path: dist
